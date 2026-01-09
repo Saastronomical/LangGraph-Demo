@@ -1,0 +1,59 @@
+{
+  "aggressive_capture": {
+    "enabled": true,
+    "rollout_percentage": 25,
+    "description": "A/B test: Ask for contact after first detail view (25% of users)",
+    "target_users": []
+  },
+  
+  "require_both_contacts": {
+    "enabled": false,
+    "rollout_percentage": 0,
+    "description": "Require both email AND phone (currently disabled)"
+  },
+  
+  "early_advisor_intro": {
+    "enabled": true,
+    "rollout_percentage": 50,
+    "description": "A/B test: Offer advisor connection in Concierge (50% rollout)",
+    "target_users": []
+  },
+  
+  "agent_tone": {
+    "enabled": true,
+    "rollout_percentage": 100,
+    "variant": "professional",
+    "description": "Agent personality - can be 'professional', 'casual', or 'consultative'"
+  },
+  
+  "show_risks_upfront": {
+    "enabled": true,
+    "rollout_percentage": 75,
+    "description": "Testing if showing risks reduces conversion (75% see risks)"
+  },
+  
+  "auto_handoff_after_details": {
+    "enabled": true,
+    "rollout_percentage": 100,
+    "description": "Auto-transfer to booking agent after showing listing details"
+  },
+  
+  "collect_budget_upfront": {
+    "enabled": true,
+    "rollout_percentage": 0,
+    "target_users": ["beta_user_1", "beta_user_2", "vip_user_abc"],
+    "description": "Beta test: Ask about budget before showing listings (targeted users only)"
+  },
+  
+  "enable_vector_search": {
+    "enabled": true,
+    "rollout_percentage": 100,
+    "description": "Use semantic search (vs keyword fallback)"
+  },
+  
+  "show_under_contract": {
+    "enabled": true,
+    "rollout_percentage": 100,
+    "description": "Show sold deals for social proof"
+  }
+}

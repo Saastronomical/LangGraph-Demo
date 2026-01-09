@@ -159,5 +159,18 @@ Common extensions:
 
 ---
 
-**Two-Agent Concierge & Booking System**
-Guided discovery → qualified handoff → scheduled action
+## 🚩 Feature Flags (Production Ready)
+   
+   This demo includes a production-grade feature flag system for:
+   - A/B testing agent behavior
+   - Gradual rollout (10% → 100%)
+   - Kill switches
+   - Per-user targeting
+   
+   See [README_FEATURE_FLAGS.md](README_FEATURE_FLAGS.md) for details.
+   
+   **Quick start:**
+```bash
+   export FF_AGGRESSIVE_CAPTURE=50  # Enable for 50% of users
+   python src/graph_with_flags.py
+```
