@@ -542,8 +542,8 @@
 					<input
 						type="text"
 						id="apiUrl"
-						value="http://localhost:8123"
-						placeholder="http://localhost:8123"
+						value="http://127.0.0.1:2024"
+						placeholder="http://127.0.0.1:2024"
 					/>
 				</div>
 
@@ -673,8 +673,8 @@
 				const statusText = document.getElementById('statusText');
 
 				try {
-					// Try to connect to LangGraph
-					const response = await fetch(`${apiUrl}/health`, { method: 'GET' });
+					// Try to connect to LangGraph - use /ok endpoint
+					const response = await fetch(`${apiUrl}/ok`, { method: 'GET' });
 					if (response.ok) {
 						statusDot.classList.add('connected');
 						statusText.textContent = 'Connected to LangGraph';
