@@ -1,61 +1,163 @@
-# New LangGraph Project
+# Two-Agent Concierge & Booking System (LangGraph)
 
-[![CI](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/unit-tests.yml)
-[![Integration Tests](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/integration-tests.yml)
+This repository contains a production-ready, two-agent conversational system built with **LangGraph** for guided discovery, qualification, and booking workflows.
 
-This template demonstrates a simple application implemented using [LangGraph](https://github.com/langchain-ai/langgraph), designed for showing how to get started with [LangGraph Server](https://langchain-ai.github.io/langgraph/concepts/langgraph_server/#langgraph-server) and using [LangGraph Studio](https://langchain-ai.github.io/langgraph/concepts/langgraph_studio/), a visual debugging IDE.
+The system is designed to move users from initial exploration to a qualified handoff or scheduled call, while reliably capturing contact information and preferences.
 
-<div align="center">
-  <img src="./static/studio_ui.png" alt="Graph view in LangGraph studio UI" width="75%" />
-</div>
+---
 
-The core logic defined in `src/agent/graph.py`, showcases an single-step application that responds with a fixed string and the configuration provided.
+## Overview
 
-You can extend this graph to orchestrate more complex agentic workflows that can be visualized and debugged in LangGraph Studio.
+The application orchestrates two specialized agents using a LangGraph state machine:
+
+* A **Concierge Agent** for discovery and high-level guidance
+* A **Listing + Booking Agent** for deep dives, scheduling, and lead capture
+
+All agent transitions, tool calls, and state changes are observable and debuggable in **LangGraph Studio**.
+
+---
+
+## Agent Architecture
+
+### 1. Concierge Agent (Agent 1)
+
+Responsibilities:
+
+* Greets users and sets context
+* Browses, lists, and searches available offerings
+* Answers high-level questions
+* Always offers an expert or advisor connection
+* Hands off to the Listing/Booking Agent when the user shows interest in a specific item or requests deeper details
+
+Key behaviors:
+
+* Concise responses
+* Smart lookup by ID or fuzzy name match
+* Explicit handoff when intent is detected
+
+---
+
+### 2. Listing + Booking Agent (Agent 2)
+
+Responsibilities:
+
+* Provides detailed information
+* Offers two clear calls to action:
+
+  1. Schedule a call (e.g. via cal.com)
+  2. Get connected to an expert or advisor
+* Captures user contact information and preferences
+* Submits qualified leads to an external system via webhook
+
+Lead capture rule:
+
+* The moment the system has **name + (email OR phone)**, it triggers the webhook
+* Optional preferences (timeline, budget, category) are included when available
+
+---
+
+## Lead Capture & Webhook Integration
+
+When a user is qualified:
+
+1. Contact information is normalized and lightly validated
+2. Item identifiers are resolved via smart lookup
+3. The appropriate expert or advisor is associated
+4. A POST request is sent to the configured webhook endpoint
+5. The user is notified that the handoff is complete
+
+### Webhook Configuration
+
+The webhook endpoint is configured via environment variable:
+
+```env
+WEBHOOK_URL=...
+```
+
+It is used by:
+
+* `send_to_webhook()`
+* Called from `capture_contact_info()`
+
+---
+
+## Project Structure
+
+```
+.
+├── graph.py              # LangGraph state machine, agents, routing
+├── listings.py           # Item data, summaries, advisor mappings
+├── .env.example          # Environment variable template
+├── README.md             # Project documentation
+```
+
+Key components:
+
+* **StateGraph** defines agent flow and routing
+* **ToolNodes** expose search, booking, and lead capture actions
+* **Smart lookup** resolves items by ID or fuzzy name match
+* **Webhook integration** submits qualified leads externally
+
+---
 
 ## Getting Started
 
-1. Install dependencies, along with the [LangGraph CLI](https://langchain-ai.github.io/langgraph/concepts/langgraph_cli/), which will be used to run the server.
+### 1. Install dependencies
 
 ```bash
-cd path/to/your/app
 pip install -e . "langgraph-cli[inmem]"
 ```
 
-2. (Optional) Customize the code and project as needed. Create a `.env` file if you need to use secrets.
+---
+
+### 2. Environment setup
+
+Create a `.env` file:
+
+```env
+OPENAI_API_KEY=sk-...
+WEBHOOK_URL=https://example.com/webhook
+LANGSMITH_API_KEY=lsv2...   # optional
+```
+
+---
+
+### 3. Run the LangGraph server
 
 ```bash
-cp .env.example .env
-```
-
-If you want to enable LangSmith tracing, add your LangSmith API key to the `.env` file.
-
-```text
-# .env
-LANGSMITH_API_KEY=lsv2...
-```
-
-3. Start the LangGraph Server.
-
-```shell
 langgraph dev
 ```
 
-For more information on getting started with LangGraph Server, [see here](https://langchain-ai.github.io/langgraph/tutorials/langgraph-platform/local-server/).
+Open **LangGraph Studio** to:
 
-## How to customize
+* Visualize agent transitions
+* Inspect tool calls
+* Replay and edit past states
+* Debug webhook-triggering conditions
 
-1. **Define runtime context**: Modify the `Context` class in the `graph.py` file to expose the arguments you want to configure per assistant. For example, in a chatbot application you may want to define a dynamic system prompt or LLM to use. For more information on runtime context in LangGraph, [see here](https://langchain-ai.github.io/langgraph/agents/context/?h=context#static-runtime-context).
+---
 
-2. **Extend the graph**: The core logic of the application is defined in [graph.py](./src/agent/graph.py). You can modify this file to add new nodes, edges, or change the flow of information.
+## Development & Debugging
 
-## Development
+* Hot reload applies local code changes automatically
+* Past conversation states can be edited and re-run
+* Tool usage and routing decisions are fully observable
+* Optional LangSmith integration enables deeper tracing and collaboration
 
-While iterating on your graph in LangGraph Studio, you can edit past state and rerun your app from previous states to debug specific nodes. Local changes will be automatically applied via hot reload.
+---
 
-Follow-up requests extend the same thread. You can create an entirely new thread, clearing previous history, using the `+` button in the top right.
+## Extending the System
 
-For more advanced features and examples, refer to the [LangGraph documentation](https://langchain-ai.github.io/langgraph/). These resources can help you adapt this template for your specific use case and build more sophisticated conversational agents.
+Common extensions:
 
-LangGraph Studio also integrates with [LangSmith](https://smith.langchain.com/) for more in-depth tracing and collaboration with teammates, allowing you to analyze and optimize your chatbot's performance.
+* Add richer user qualification (budget, geography, timeline)
+* Introduce seller or provider-side intake flows
+* Add lead scoring or prioritization
+* Swap the webhook target for a CRM or database
+* Add async follow-ups or reminders
+* Split agents and tools into separate modules as the system grows
 
+---
+
+**Two-Agent Concierge & Booking System**
+Guided discovery → qualified handoff → scheduled action
