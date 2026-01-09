@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baton AI Agent Demo - Feature Flags</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #FF6B35;
+            --secondary: #004E89;
+            --success: #06D6A0;
+            --bg-dark: #0A0E27;
+            --bg-card: #151A35;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8B93B0;
+            --border: #2A3351;
+            --accent-glow: rgba(255, 107, 53, 0.3);
+        }
+        
+        body {
+            font-family: 'Syne', sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0F1333 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 78, 137, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .container {
+            position: relative;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            min-height: 100vh;
+            z-index: 1;
+        }
+        
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--success) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        /* Feature Flags Panel */
+        .flags-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        .flags-panel h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .flag-emoji {
+            font-size: 1.5rem;
+        }
+        
+        .flag-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .flag-group h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .flag-item {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        
+        .flag-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        
+        .flag-item.active {
+            border-color: var(--success);
+            background: rgba(6, 214, 160, 0.05);
+        }
+        
+        .flag-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .flag-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        
+        .flag-toggle {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            background: var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .flag-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .flag-toggle.active {
+            background: var(--success);
+        }
+        
+        .flag-toggle.active::after {
+            left: 26px;
+        }
+        
+        .flag-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        
+        .flag-rollout {
+            margin-top: 0.5rem;
+            display: none;
+        }
+        
+        .flag-item.active .flag-rollout {
+            display: block;
+        }
+        
+        .rollout-slider {
+            width: 100%;
+            margin-top: 0.5rem;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+        }
+        
+        .rollout-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--success);
+            cursor: pointer;
+        }
+        
+        .rollout-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        
+        /* Chat Panel */
+        .chat-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 250px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+        
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .user-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .user-id span {
+            color: var(--primary);
+            font-weight: 700;
+        }
+        
+        .new-user-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .new-user-btn:hover {
+            background: #FF8555;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .message {
+            display: flex;
+            gap: 1rem;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .user .message-avatar {
+            background: linear-gradient(135deg, var(--primary), #FF8555);
+        }
+        
+        .agent .message-avatar {
+            background: linear-gradient(135deg, var(--secondary), var(--success));
+        }
+        
+        .message-content {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        
+        .message-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .message-role {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        
+        .user .message-role {
+            color: var(--primary);
+        }
+        
+        .agent .message-role {
+            color: var(--success);
+        }
+        
+        .agent-name {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .message-text {
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+        
+        .flag-badge {
+            display: inline-block;
+            background: rgba(255, 107, 53, 0.2);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-left: 0.5rem;
+        }
+        
+        /* Input Area */
+        .input-area {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+        
+        .input-area input {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-primary);
+            font-family: 'Syne', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .input-area input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        
+        .input-area button {
+            background: linear-gradient(135deg, var(--primary), #FF8555);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .input-area button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+        
+        .input-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Scrollbar */
+        .messages::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .messages::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+            border-radius: 4px;
+        }
+        
+        .messages::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        
+        .messages::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+        
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 1.4s infinite ease-in-out both;
+        }
+        
+        .loading:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .loading:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        @keyframes pulse {
+            0%, 80%, 100% {
+                opacity: 0.3;
+                transform: scale(0.8);
+            }
+            40% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .thinking {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .flags-panel {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚩 Baton AI Agent Demo</h1>
+            <p>LangGraph agents with production feature flags - Toggle features and see agent behavior change in real-time</p>
+        </div>
+        
+        <aside class="flags-panel">
+            <h2><span class="flag-emoji">🚩</span> Feature Flags</h2>
+            
+            <div class="flag-group">
+                <h3>Lead Capture</h3>
+                
+                <div class="flag-item" data-flag="aggressive_capture">
+                    <div class="flag-header">
+                        <span class="flag-name">aggressive_capture</span>
+                        <div class="flag-toggle"></div>
+                    </div>
+                    <div class="flag-desc">Ask for contact info after first listing detail view</div>
+                    <div class="flag-rollout">
+                        <input type="range" class="rollout-slider" min="0" max="100" value="100">
+                        <div class="rollout-label">
+                            <span>Rollout:</span>
+                            <span class="rollout-value">100%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flag-item" data-flag="require_both_contacts">
+                    <div class="flag-header">
+                        <span class="flag-name">require_both_contacts</span>
+                        <div class="flag-toggle"></div>
+                    </div>
+                    <div class="flag-desc">Require BOTH email AND phone (vs email OR phone)</div>
+                    <div class="flag-rollout">
+                        <input type="range" class="rollout-slider" min="0" max="100" value="100">
+                        <div class="rollout-label">
+                            <span>Rollout:</span>
+                            <span class="rollout-value">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flag-group">
+                <h3>Information Disclosure</h3>
+                
+                <div class="flag-item active" data-flag="show_risks_upfront">
+                    <div class="flag-header">
+                        <span class="flag-name">show_risks_upfront</span>
+                        <div class="flag-toggle active"></div>
+                    </div>
+                    <div class="flag-desc">Include risk analysis in listing details</div>
+                    <div class="flag-rollout">
+                        <input type="range" class="rollout-slider" min="0" max="100" value="100">
+                        <div class="rollout-label">
+                            <span>Rollout:</span>
+                            <span class="rollout-value">100%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flag-item" data-flag="early_advisor_intro">
+                    <div class="flag-header">
+                        <span class="flag-name">early_advisor_intro</span>
+                        <div class="flag-toggle"></div>
+                    </div>
+                    <div class="flag-desc">Offer advisor connection in Concierge agent</div>
+                    <div class="flag-rollout">
+                        <input type="range" class="rollout-slider" min="0" max="100" value="100">
+                        <div class="rollout-label">
+                            <span>Rollout:</span>
+                            <span class="rollout-value">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flag-group">
+                <h3>Agent Routing</h3>
+                
+                <div class="flag-item active" data-flag="auto_handoff_after_details">
+                    <div class="flag-header">
+                        <span class="flag-name">auto_handoff_after_details</span>
+                        <div class="flag-toggle active"></div>
+                    </div>
+                    <div class="flag-desc">Auto-transfer to Booking agent after listing details</div>
+                    <div class="flag-rollout">
+                        <input type="range" class="rollout-slider" min="0" max="100" value="100">
+                        <div class="rollout-label">
+                            <span>Rollout:</span>
+                            <span class="rollout-value">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="chat-panel">
+            <div class="chat-header">
+                <div class="user-id">User ID: <span id="userId"></span></div>
+                <button class="new-user-btn" onclick="newUser()">New User</button>
+            </div>
+            
+            <div class="messages" id="messages">
+                <div class="message agent">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="message-meta">
+                            <span class="message-role">Concierge Agent</span>
+                            <span class="agent-name">Agent 1</span>
+                        </div>
+                        <div class="message-text">
+                            Welcome to Baton! I can help you explore businesses for sale. What kind of business are you interested in?
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Type your message..." 
+                    onkeypress="if(event.key === 'Enter') sendMessage()"
+                >
+                <button onclick="sendMessage()" id="sendBtn">Send</button>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // State
+        let userId = generateUserId();
+        let flags = {
+            aggressive_capture: false,
+            require_both_contacts: false,
+            show_risks_upfront: true,
+            early_advisor_intro: false,
+            auto_handoff_after_details: true
+        };
+        let rollouts = {
+            aggressive_capture: 100,
+            require_both_contacts: 100,
+            show_risks_upfront: 100,
+            early_advisor_intro: 100,
+            auto_handoff_after_details: 100
+        };
+        let conversationHistory = [];
+        let currentAgent = 'concierge';
+        
+        // Initialize
+        document.getElementById('userId').textContent = userId;
+        
+        // Feature flag toggles
+        document.querySelectorAll('.flag-toggle').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const flagItem = this.closest('.flag-item');
+                const flagName = flagItem.dataset.flag;
+                
+                const isActive = flagItem.classList.contains('active');
+                if (isActive) {
+                    flagItem.classList.remove('active');
+                    this.classList.remove('active');
+                    flags[flagName] = false;
+                } else {
+                    flagItem.classList.add('active');
+                    this.classList.add('active');
+                    flags[flagName] = true;
+                }
+                
+                console.log('Flag updated:', flagName, flags[flagName]);
+                updateFlagInfo();
+            });
+        });
+        
+        // Rollout sliders
+        document.querySelectorAll('.rollout-slider').forEach(slider => {
+            slider.addEventListener('input', function() {
+                const flagItem = this.closest('.flag-item');
+                const flagName = flagItem.dataset.flag;
+                const value = this.value;
+                
+                rollouts[flagName] = parseInt(value);
+                this.nextElementSibling.querySelector('.rollout-value').textContent = value + '%';
+                
+                console.log('Rollout updated:', flagName, value + '%');
+            });
+        });
+        
+        function generateUserId() {
+            return 'user_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        function newUser() {
+            userId = generateUserId();
+            document.getElementById('userId').textContent = userId;
+            conversationHistory = [];
+            currentAgent = 'concierge';
+            
+            const messages = document.getElementById('messages');
+            messages.innerHTML = `
+                <div class="message agent">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="message-meta">
+                            <span class="message-role">Concierge Agent</span>
+                            <span class="agent-name">Agent 1</span>
+                        </div>
+                        <div class="message-text">
+                            Welcome to Baton! I can help you explore businesses for sale. What kind of business are you interested in?
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            updateFlagInfo();
+        }
+        
+        function updateFlagInfo() {
+            // Add flag info message
+            const messages = document.getElementById('messages');
+            const flagsEnabled = Object.entries(flags).filter(([k, v]) => v).map(([k, v]) => k);
+            
+            if (flagsEnabled.length > 0) {
+                const flagBadges = flagsEnabled.map(f => 
+                    `<span class="flag-badge">🚩 ${f}</span>`
+                ).join('');
+                
+                console.log('Active flags for user ' + userId + ':', flagsEnabled.join(', '));
+            }
+        }
+        
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+            
+            // Add to history
+            conversationHistory.push({ role: 'user', content: message });
+            
+            // Show thinking
+            const thinkingId = addThinking();
+            
+            // Simulate agent response (in real version, this would call your LangGraph API)
+            setTimeout(() => {
+                removeThinking(thinkingId);
+                const response = simulateAgentResponse(message);
+                addMessage('agent', response.text, response.agent);
+                conversationHistory.push({ role: 'assistant', content: response.text });
+            }, 1500);
+        }
+        
+        function simulateAgentResponse(userMessage) {
+            const msg = userMessage.toLowerCase();
+            
+            // Detect handoff triggers
+            if (msg.includes('tell me more') || msg.includes('details') || msg.includes('interested')) {
+                currentAgent = 'listing';
+            }
+            
+            // Simulate responses based on flags
+            if (currentAgent === 'concierge') {
+                if (msg.includes('entertainment') || msg.includes('festival')) {
+                    let response = "I found a great entertainment business! The Established Festival & Talent Booking Business in Santa Fe Springs, CA is asking $25M with $7.8M cash flow.";
+                    
+                    if (flags.show_risks_upfront) {
+                        response += " Key risks include event volatility and founder dependency on artist relationships.";
+                    }
+                    
+                    if (flags.early_advisor_intro) {
+                        response += " Would you like me to connect you with Fahad Salman, the M&A advisor for this listing?";
+                    } else {
+                        response += " Want to learn more about this opportunity?";
+                    }
+                    
+                    return { text: response, agent: 'Concierge' };
+                }
+                
+                return { 
+                    text: "I can help you search for businesses by industry, location, or price range. What are you interested in?",
+                    agent: 'Concierge'
+                };
+            } else {
+                // Listing/Booking agent
+                if (flags.aggressive_capture && !msg.includes('@') && !msg.includes('email')) {
+                    const requireBoth = flags.require_both_contacts;
+                    if (requireBoth) {
+                        return {
+                            text: "Great! To get you connected with the advisor, I'll need your name, email, and phone number. What's the best way to reach you?",
+                            agent: 'Booking'
+                        };
+                    } else {
+                        return {
+                            text: "Perfect! Can I get your name and email to connect you with Fahad Salman, the M&A advisor for this listing?",
+                            agent: 'Booking'
+                        };
+                    }
+                }
+                
+                return {
+                    text: "This business produces multi-day festivals across the U.S. and Mexico. Revenue is 70% events, 30% talent management. Would you like to schedule a call with the advisor or should I capture your contact info for a follow-up?",
+                    agent: 'Booking'
+                };
+            }
+        }
+        
+        function addMessage(role, text, agentName = null) {
+            const messages = document.getElementById('messages');
+            const isUser = role === 'user';
+            
+            const activeFlags = Object.entries(flags)
+                .filter(([k, v]) => v)
+                .map(([k]) => k);
+            
+            const flagBadges = activeFlags.length > 0 && !isUser
+                ? activeFlags.map(f => `<span class="flag-badge">🚩 ${f}</span>`).join('')
+                : '';
+            
+            const messageHTML = `
+                <div class="message ${role}">
+                    <div class="message-avatar">${isUser ? '👤' : '🤖'}</div>
+                    <div class="message-content">
+                        <div class="message-meta">
+                            <span class="message-role">${isUser ? 'You' : (agentName || 'Agent')}</span>
+                            ${!isUser ? `<span class="agent-name">Agent ${agentName === 'Concierge' ? '1' : '2'}${flagBadges}</span>` : ''}
+                        </div>
+                        <div class="message-text">${text}</div>
+                    </div>
+                </div>
+            `;
+            
+            messages.insertAdjacentHTML('beforeend', messageHTML);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function addThinking() {
+            const messages = document.getElementById('messages');
+            const thinkingId = 'thinking-' + Date.now();
+            
+            const thinkingHTML = `
+                <div class="message agent" id="${thinkingId}">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="thinking">
+                            <span>Thinking</span>
+                            <div class="loading"></div>
+                            <div class="loading"></div>
+                            <div class="loading"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            messages.insertAdjacentHTML('beforeend', thinkingHTML);
+            messages.scrollTop = messages.scrollHeight;
+            
+            return thinkingId;
+        }
+        
+        function removeThinking(thinkingId) {
+            const thinking = document.getElementById(thinkingId);
+            if (thinking) thinking.remove();
+        }
+        
+        // Initial flag info
+        updateFlagInfo();
+    </script>
+</body>
+</html>

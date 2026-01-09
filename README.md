@@ -174,3 +174,16 @@ Common extensions:
    export FF_AGGRESSIVE_CAPTURE=50  # Enable for 50% of users
    python src/graph_with_flags.py
 ```
+
+## 🎯 Live Demo
+
+**Try the interactive chat interface:**
+```bash
+open chat_demo.html
+```
+
+Toggle feature flags in real-time and watch agent behavior change. Demonstrates:
+- A/B testing different agent personalities
+- Gradual rollout (10% → 100%)
+- Kill switches for instant disable
+- Per-user consistent experiences
