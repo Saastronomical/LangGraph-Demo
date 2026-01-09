@@ -50,8 +50,7 @@ embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embeddings)
 vector_store.add_documents(get_all_documents())
 
-AIRTABLE_WEBHOOK = "https://hooks.airtable.com/workflows/v1/genericWebhook/appmezeiyzIVVTV37/wflNWTbax4yqOhY5P/wtrCRQ5IoK22h7FPi"
-
+AIRTABLE_WEBHOOK = os.getenv("AIRTABLE_WEBHOOK_URL")
 
 def send_to_airtable(data: dict) -> str:
     """Send data to Airtable webhook. Returns a string status for the agent."""
